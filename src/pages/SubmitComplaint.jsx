@@ -23,6 +23,7 @@ const SubmitComplaint = () => {
     const { addComplaint } = useComplaints();
     const [loading, setLoading] = useState(false);
     const [showMap, setShowMap] = useState(false);
+    const [previewUrl, setPreviewUrl] = useState(null);
 
     // Voice Input
     const { isListening, transcript, startListening, stopListening, resetTranscript, supported: voiceSupported } = useSpeechToText();
@@ -59,6 +60,10 @@ const SubmitComplaint = () => {
     const handleImageChange = async (e) => {
         const file = e.target.files[0];
         if (file) {
+            // Create preview URL
+            const url = URL.createObjectURL(file);
+            setPreviewUrl(url);
+
             let location = formData.location;
 
             // Try to extract EXIF location
@@ -202,19 +207,32 @@ const SubmitComplaint = () => {
                     <div className="space-y-2">
                         <label className="block text-sm font-medium text-slate-700">Attachment & Location</label>
                         <div className="flex gap-4 flex-col sm:flex-row">
-                            <div className="flex-1 border-2 border-dashed border-slate-300 rounded-lg p-6 hover:bg-slate-50 transition-colors text-center cursor-pointer relative">
+                            <div className={`flex-1 border-2 border-dashed ${previewUrl ? 'border-indigo-500 bg-indigo-50' : 'border-slate-300'} rounded-lg hover:bg-slate-50 transition-colors text-center cursor-pointer relative overflow-hidden h-64 group`}>
                                 <input
                                     type="file"
-                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                     onChange={handleImageChange}
                                     accept="image/*"
                                 />
-                                <div className="flex flex-col items-center gap-2 text-slate-500">
-                                    <Upload className="w-8 h-8" />
-                                    <span className="text-sm">
-                                        {formData.image ? formData.image.name : 'Upload Image'}
-                                    </span>
-                                </div>
+                                {previewUrl ? (
+                                    <div className="w-full h-full relative">
+                                        <img
+                                            src={previewUrl}
+                                            alt="Preview"
+                                            className="w-full h-full object-contain"
+                                        />
+                                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white font-medium">
+                                            Click to change
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center h-full gap-2 text-slate-500">
+                                        <Upload className="w-8 h-8" />
+                                        <span className="text-sm">
+                                            {formData.image ? formData.image.name : 'Upload Image'}
+                                        </span>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Location Display/Picker */}

@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import Layout from './components/Layout.jsx';
 import Home from './pages/Home.jsx';
+import PageTransition from './components/PageTransition.jsx';
 import { ComplaintProvider } from './context/ComplaintContext.jsx';
 
 // Placeholders for other pages
@@ -17,11 +18,31 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Layout />}>
-            <Route index element={<Home />} />
-            <Route path="submit" element={<SubmitComplaint />} />
-            <Route path="success" element={<ComplaintSuccess />} />
-            <Route path="track" element={<TrackComplaint />} />
-            <Route path="admin" element={<AdminDashboard />} />
+            <Route index element={
+              <PageTransition>
+                <Home />
+              </PageTransition>
+            } />
+            <Route path="submit" element={
+              <PageTransition>
+                <SubmitComplaint />
+              </PageTransition>
+            } />
+            <Route path="success" element={
+              <PageTransition>
+                <ComplaintSuccess />
+              </PageTransition>
+            } />
+            <Route path="track" element={
+              <PageTransition>
+                <TrackComplaint />
+              </PageTransition>
+            } />
+            <Route path="admin" element={
+              <PageTransition>
+                <AdminDashboard />
+              </PageTransition>
+            } />
           </Route>
         </Routes>
         <Toaster position="top-right" />

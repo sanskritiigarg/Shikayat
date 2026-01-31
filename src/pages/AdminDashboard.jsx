@@ -3,6 +3,9 @@ import { useComplaints } from '../context/ComplaintContext';
 import { Search, Filter, AlertTriangle, CheckCircle, Clock, MoreHorizontal, X, MapPin, Eye, EyeOff, Flag } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ComplaintDetailModal from '../components/ComplaintDetailModal';
+import TransferModal from '../components/TransferModal';
+import AdminCharts from '../components/AdminCharts';
+import { ArrowRightLeft } from 'lucide-react';
 
 const AdminDashboard = () => {
     const { complaints, updateStatus } = useComplaints();
@@ -10,6 +13,7 @@ const AdminDashboard = () => {
     const [filterCategory, setFilterCategory] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedComplaint, setSelectedComplaint] = useState(null); // For modal
+    const [transferComplaintData, setTransferComplaintData] = useState(null); // For transfer modal
 
     const handleStatusUpdate = (id, newStatus) => {
         updateStatus(id, newStatus);
@@ -19,6 +23,13 @@ const AdminDashboard = () => {
         if (selectedComplaint && selectedComplaint.id === id) {
             setSelectedComplaint(prev => ({ ...prev, status: newStatus }));
         }
+    };
+
+    const handleTransferSuccess = (id) => {
+        // Refresh or update local state logic
+        // In a real app with subscriptions, this might happen automatically
+        // For now, we can just close the modal.
+        setTransferComplaintData(null);
     };
 
     const filteredComplaints = useMemo(() => {
@@ -55,7 +66,8 @@ const AdminDashboard = () => {
                 </div>
             </div>
 
-            {/* Filters */}
+            <AdminCharts complaints={complaints} />
+
             <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4">
                 <div className="flex-1 relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -93,10 +105,10 @@ const AdminDashboard = () => {
                         <option value="Other">Other</option>
                     </select>
                 </div>
-            </div>
+            </div >
 
             {/* List */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            < div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden" >
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead className="bg-slate-50 border-b border-slate-200">
@@ -181,6 +193,16 @@ const AdminDashboard = () => {
                                             >
                                                 View
                                             </button>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setTransferComplaintData(complaint);
+                                                }}
+                                                className="text-slate-500 hover:text-slate-800 text-sm font-medium ml-3"
+                                                title="Transfer Complaint"
+                                            >
+                                                <ArrowRightLeft className="w-4 h-4" />
+                                            </button>
                                         </td>
                                     </tr>
                                 ))
@@ -188,17 +210,31 @@ const AdminDashboard = () => {
                         </tbody>
                     </table>
                 </div>
-            </div>
+            </div >
 
             {/* Detail Modal */}
-            {selectedComplaint && (
-                <ComplaintDetailModal
-                    complaint={selectedComplaint}
-                    onClose={() => setSelectedComplaint(null)}
-                    onUpdateStatus={handleStatusUpdate}
-                />
-            )}
-        </div>
+            {
+                selectedComplaint && (
+                    <ComplaintDetailModal
+                        complaint={selectedComplaint}
+                        onClose={() => setSelectedComplaint(null)}
+                        onUpdateStatus={handleStatusUpdate}
+                    />
+                )
+            }
+
+            {/* Transfer Modal */}
+            {
+                transferComplaintData && (
+                    <TransferModal
+                        complaint={transferComplaintData}
+                        currentAdminId="current-admin-id" // Replace with actual auth ID
+                        onClose={() => setTransferComplaintData(null)}
+                        onTransferSuccess={handleTransferSuccess}
+                    />
+                )
+            }
+        </div >
     );
 };
 
