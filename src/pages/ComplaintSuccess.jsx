@@ -1,21 +1,11 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { CheckCircle, Copy, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
-import confetti from 'canvas-confetti';
 
 const ComplaintSuccess = () => {
     const [searchParams] = useSearchParams();
     const id = searchParams.get('id');
-
-    useEffect(() => {
-        // Fire confetti on load
-        confetti({
-            particleCount: 100,
-            spread: 70,
-            origin: { y: 0.6 }
-        });
-    }, []);
 
     const copyToClipboard = () => {
         navigator.clipboard.writeText(id);
