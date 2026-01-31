@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useComplaints } from '../context/ComplaintContext';
-import { Search, Filter, AlertTriangle, CheckCircle, Clock, MoreHorizontal, X } from 'lucide-react';
+import { Search, Filter, AlertTriangle, CheckCircle, Clock, MoreHorizontal, X, MapPin, Eye, EyeOff, Flag } from 'lucide-react';
 
 const AdminDashboard = () => {
     const { complaints, updateStatus } = useComplaints();
@@ -16,9 +16,13 @@ const AdminDashboard = () => {
             const matchSearch = c.description.toLowerCase().includes(searchQuery.toLowerCase()) || c.id.toLowerCase().includes(searchQuery.toLowerCase());
             return matchStatus && matchCategory && matchSearch;
         }).sort((a, b) => {
-            // Priority sort (Pending first)
-            const priority = { 'Pending': 0, 'In Progress': 1, 'Resolved': 2, 'Rejected': 3 };
-            return priority[a.status] - priority[b.status] || new Date(b.submittedAt) - new Date(a.submittedAt);
+            // Priority sort (Critical first, then Pending)
+            const priorityScore = (c) => {
+                if (c.priority === 'CRITICAL') return -1;
+                const statusOrder = { 'Pending': 0, 'In Progress': 1, 'Resolved': 2, 'Rejected': 3 };
+                return statusOrder[c.status];
+            };
+            return priorityScore(a) - priorityScore(b) || new Date(b.submittedAt) - new Date(a.submittedAt);
         });
     }, [complaints, filterStatus, filterCategory, searchQuery]);
 
@@ -85,9 +89,11 @@ const AdminDashboard = () => {
                     <table className="w-full text-left">
                         <thead className="bg-slate-50 border-b border-slate-200">
                             <tr>
-                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase">ID</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase">ID & Priority</th>
                                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase">Category</th>
-                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase w-1/3">Description</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase w-1/4">Description</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase">Location</th>
+                                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase">Contact</th>
                                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase">Date</th>
                                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase">Status</th>
                                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase">Actions</th>
@@ -102,8 +108,15 @@ const AdminDashboard = () => {
                                 </tr>
                             ) : (
                                 filteredComplaints.map(complaint => (
-                                    <tr key={complaint.id} className="hover:bg-slate-50 transition-colors">
-                                        <td className="px-6 py-4 font-mono text-sm font-medium text-slate-600">{complaint.id}</td>
+                                    <tr key={complaint.id} className={`hover:bg-slate-50 transition-colors ${complaint.priority === 'CRITICAL' ? 'bg-red-50 hover:bg-red-100' : ''}`}>
+                                        <td className="px-6 py-4">
+                                            <div className="font-mono text-sm font-medium text-slate-600">{complaint.id}</div>
+                                            {complaint.priority === 'CRITICAL' && (
+                                                <div className="flex items-center gap-1 text-xs text-red-600 font-bold mt-1" title={complaint.escalationReason}>
+                                                    <Flag className="w-3 h-3" /> CRITICAL
+                                                </div>
+                                            )}
+                                        </td>
                                         <td className="px-6 py-4">
                                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
                                                 {complaint.category}
@@ -113,6 +126,28 @@ const AdminDashboard = () => {
                                             <p className="text-sm text-slate-600 truncate max-w-xs" title={complaint.description}>
                                                 {complaint.description}
                                             </p>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            {complaint.location ? (
+                                                <div className="flex items-center gap-1 text-xs text-slate-500" title={`Lat: ${complaint.location.lat}, Lng: ${complaint.location.lng}`}>
+                                                    <MapPin className="w-3 h-3" />
+                                                    {complaint.location.source === 'exif' ? 'Image' : 'Pinned'}
+                                                </div>
+                                            ) : (
+                                                <span className="text-xs text-slate-400">N/A</span>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            {complaint.isAnonymous ? (
+                                                <div className="flex items-center gap-1 text-xs text-slate-500 italic">
+                                                    <EyeOff className="w-3 h-3" /> Hidden
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center gap-1 text-sm text-slate-600">
+                                                    <Eye className="w-3 h-3 text-slate-400" />
+                                                    {complaint.email}
+                                                </div>
+                                            )}
                                         </td>
                                         <td className="px-6 py-4 text-sm text-slate-500">
                                             {new Date(complaint.submittedAt).toLocaleDateString()}

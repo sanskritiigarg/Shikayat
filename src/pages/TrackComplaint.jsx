@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useComplaints } from '../context/ComplaintContext';
-import { Search, Circle, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Search, Circle, CheckCircle, Clock, AlertCircle, Star } from 'lucide-react';
+import FeedbackForm from '../components/FeedbackForm';
 
 const TrackComplaint = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const urlId = searchParams.get('id');
     const [searchId, setSearchId] = useState(urlId || '');
-    const { getComplaint } = useComplaints();
+    const { getComplaint, addFeedback } = useComplaints();
     const [complaint, setComplaint] = useState(null);
     const [error, setError] = useState('');
 
@@ -130,9 +131,39 @@ const TrackComplaint = () => {
                             ))}
                         </div>
                     </div>
-                </div>
+
+
+                    {/* Feedback Section */}
+                    {
+                        complaint.status === 'Resolved' && (
+                            complaint.feedback ? (
+                                <div className="bg-emerald-50 rounded-xl border border-emerald-100 p-6">
+                                    <h3 className="text-lg font-bold text-emerald-900 mb-2">Feedback Submitted</h3>
+                                    <div className="flex items-center gap-1 mb-2">
+                                        {[1, 2, 3, 4, 5].map((star) => (
+                                            <Star
+                                                key={star}
+                                                className={`w-5 h-5 ${star <= complaint.feedback.rating ? 'text-amber-400 fill-amber-400' : 'text-emerald-200'}`}
+                                            />
+                                        ))}
+                                    </div>
+                                    <p className="text-emerald-800 italic">"{complaint.feedback.comment}"</p>
+                                    <p className="text-xs text-emerald-600 mt-2">Submitted on {new Date(complaint.feedback.timestamp).toLocaleDateString()}</p>
+                                </div>
+                            ) : (
+                                <FeedbackForm
+                                    complaintId={complaint.id}
+                                    onSubmit={(feedback) => {
+                                        addFeedback(complaint.id, feedback);
+                                        setComplaint(prev => ({ ...prev, feedback }));
+                                    }}
+                                />
+                            )
+                        )
+                    }
+                </div >
             )}
-        </div>
+        </div >
     );
 };
 
