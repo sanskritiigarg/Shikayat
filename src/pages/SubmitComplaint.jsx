@@ -1,12 +1,22 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useComplaints } from '../context/ComplaintContext';
-import { Upload, Send, AlertCircle, MapPin, Mic, MicOff, Info } from 'lucide-react';
+import { Upload, Send, AlertCircle, MapPin, Mic, MicOff, Info, Navigation, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 import EXIF from 'exif-js';
 import { getLocationFromImage } from '../utils/locationUtils';
 import LocationPicker from '../components/LocationPicker';
 import useSpeechToText from '../hooks/useSpeechToText';
+import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet'; // For preview
+import L from 'leaflet'; // For preview icon restoration
+const PreviewMap = ({ lat, lng }) => {
+    return (
+        <MapContainer center={[lat, lng]} zoom={15} style={{ height: '100%', width: '100%' }} zoomControl={false} dragging={false} scrollWheelZoom={false} doubleClickZoom={false}>
+            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+            <Marker position={[lat, lng]}></Marker>
+        </MapContainer>
+    )
+}
 
 const SubmitComplaint = () => {
     const navigate = useNavigate();
@@ -64,6 +74,31 @@ const SubmitComplaint = () => {
 
             setFormData(prev => ({ ...prev, image: file, location }));
         }
+    };
+
+
+
+    const handleCurrentLocation = () => {
+        if (!navigator.geolocation) {
+            toast.error('Geolocation is not supported by your browser');
+            return;
+        }
+
+        toast.loading('Fetching location...', { id: 'geo-loc' });
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const { latitude, longitude } = pos.coords;
+                setFormData(prev => ({
+                    ...prev,
+                    location: { lat: latitude, lng: longitude, source: 'manual' }
+                }));
+                toast.success('Current location applied!', { id: 'geo-loc' });
+            },
+            (err) => {
+                console.error(err);
+                toast.error('Unable to retrieve location', { id: 'geo-loc' });
+            }
+        );
     };
 
     const handleLocationSelect = (loc) => {
@@ -183,36 +218,48 @@ const SubmitComplaint = () => {
                             </div>
 
                             {/* Location Display/Picker */}
-                            <div className="flex-1 flex flex-col justify-center items-center border border-slate-200 rounded-lg p-4 bg-slate-50">
+                            <div className="flex-1 border border-slate-200 rounded-lg bg-slate-50 overflow-hidden flex flex-col">
                                 {formData.location ? (
-                                    <div className="text-center">
-                                        <div className="flex items-center justify-center gap-2 text-emerald-600 font-medium mb-1">
-                                            <MapPin className="w-5 h-5" />
-                                            Location Detected
+                                    <div className="flex-1 relative min-h-[150px]">
+                                        <PreviewMap lat={formData.location.lat} lng={formData.location.lng} />
+                                        <div className="absolute bottom-2 left-2 right-2 bg-white/90 backdrop-blur-sm p-2 rounded-lg text-xs shadow-sm z-[400] flex justify-between items-center">
+                                            <div>
+                                                <p className="font-semibold text-slate-800">Selected Location</p>
+                                                <p className="text-slate-500">{formData.location.lat.toFixed(4)}, {formData.location.lng.toFixed(4)}</p>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setFormData(prev => ({ ...prev, location: null }))}
+                                                className="text-red-500 hover:text-red-700 p-1"
+                                            >
+                                                Remove
+                                            </button>
                                         </div>
-                                        <p className="text-xs text-slate-500 mb-2">
-                                            {formData.location.source === 'exif' ? 'Extracted from image' : 'Manually pinned'}
-                                            <br />
-                                            {formData.location.lat.toFixed(4)}, {formData.location.lng.toFixed(4)}
-                                        </p>
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowMap(true)}
-                                            className="text-indigo-600 text-sm hover:underline"
-                                        >
-                                            Change Location
-                                        </button>
                                     </div>
                                 ) : (
-                                    <div className="text-center">
-                                        <p className="text-sm text-slate-500 mb-3">No location added</p>
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowMap(true)}
-                                            className="px-4 py-2 bg-white border border-slate-300 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 flex items-center gap-2 mx-auto"
-                                        >
-                                            <MapPin className="w-4 h-4" /> Add Location
-                                        </button>
+                                    <div className="flex-1 p-6 flex flex-col justify-center items-center text-center">
+                                        <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center mb-3">
+                                            <MapPin className="w-6 h-6 text-indigo-600" />
+                                        </div>
+                                        <h4 className="font-medium text-slate-900 mb-1">Add Location</h4>
+                                        <p className="text-xs text-slate-500 mb-4">Help us locate the issue accurately</p>
+
+                                        <div className="flex gap-2 w-full">
+                                            <button
+                                                type="button"
+                                                onClick={handleCurrentLocation}
+                                                className="flex-1 py-2 px-3 bg-white border border-slate-300 rounded-lg text-xs font-medium text-slate-700 hover:bg-slate-50 flex items-center justify-center gap-1.5 transition-colors"
+                                            >
+                                                <Navigation className="w-3.5 h-3.5" /> Current Loc
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowMap(true)}
+                                                className="flex-1 py-2 px-3 bg-indigo-600 border border-transparent rounded-lg text-xs font-medium text-white hover:bg-indigo-700 flex items-center justify-center gap-1.5 transition-colors shadow-sm"
+                                            >
+                                                <Search className="w-3.5 h-3.5" /> Search / Map
+                                            </button>
+                                        </div>
                                     </div>
                                 )}
                             </div>

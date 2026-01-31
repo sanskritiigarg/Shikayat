@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { useComplaints } from '../context/ComplaintContext';
 import { Search, Filter, AlertTriangle, CheckCircle, Clock, MoreHorizontal, X, MapPin, Eye, EyeOff, Flag } from 'lucide-react';
+import toast from 'react-hot-toast';
+import ComplaintDetailModal from '../components/ComplaintDetailModal';
 
 const AdminDashboard = () => {
     const { complaints, updateStatus } = useComplaints();
@@ -8,6 +10,16 @@ const AdminDashboard = () => {
     const [filterCategory, setFilterCategory] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedComplaint, setSelectedComplaint] = useState(null); // For modal
+
+    const handleStatusUpdate = (id, newStatus) => {
+        updateStatus(id, newStatus);
+        toast.success(`Status updated to ${newStatus}`);
+
+        // Update local modal state if open
+        if (selectedComplaint && selectedComplaint.id === id) {
+            setSelectedComplaint(prev => ({ ...prev, status: newStatus }));
+        }
+    };
 
     const filteredComplaints = useMemo(() => {
         return complaints.filter(c => {
@@ -108,7 +120,11 @@ const AdminDashboard = () => {
                                 </tr>
                             ) : (
                                 filteredComplaints.map(complaint => (
-                                    <tr key={complaint.id} className={`hover:bg-slate-50 transition-colors ${complaint.priority === 'CRITICAL' ? 'bg-red-50 hover:bg-red-100' : ''}`}>
+                                    <tr
+                                        key={complaint.id}
+                                        onClick={() => setSelectedComplaint(complaint)}
+                                        className={`hover:bg-slate-50 transition-colors cursor-pointer ${complaint.priority === 'CRITICAL' ? 'bg-red-50 hover:bg-red-100' : ''}`}
+                                    >
                                         <td className="px-6 py-4">
                                             <div className="font-mono text-sm font-medium text-slate-600">{complaint.id}</div>
                                             {complaint.priority === 'CRITICAL' && (
@@ -157,10 +173,13 @@ const AdminDashboard = () => {
                                         </td>
                                         <td className="px-6 py-4">
                                             <button
-                                                onClick={() => setSelectedComplaint(complaint)}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelectedComplaint(complaint);
+                                                }}
                                                 className="text-indigo-600 hover:text-indigo-900 text-sm font-medium"
                                             >
-                                                Update
+                                                View
                                             </button>
                                         </td>
                                     </tr>
@@ -171,12 +190,12 @@ const AdminDashboard = () => {
                 </div>
             </div>
 
-            {/* Update Modal */}
+            {/* Detail Modal */}
             {selectedComplaint && (
-                <UpdateStatusModal
+                <ComplaintDetailModal
                     complaint={selectedComplaint}
                     onClose={() => setSelectedComplaint(null)}
-                    onUpdate={updateStatus}
+                    onUpdateStatus={handleStatusUpdate}
                 />
             )}
         </div>
@@ -197,74 +216,6 @@ const StatusBadge = ({ status }) => {
     );
 };
 
-const UpdateStatusModal = ({ complaint, onClose, onUpdate }) => {
-    const [status, setStatus] = useState(complaint.status);
-    const [note, setNote] = useState('');
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        onUpdate(complaint.id, status, note);
-        onClose();
-    };
-
-    return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 animate-fade-in-up">
-                <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-lg font-bold text-slate-900">Update Status</h3>
-                    <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
-                        <X className="w-5 h-5" />
-                    </button>
-                </div>
-
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Current Status</label>
-                        <select
-                            value={status}
-                            onChange={(e) => setStatus(e.target.value)}
-                            className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none"
-                        >
-                            <option value="Pending">Pending</option>
-                            <option value="In Progress">In Progress</option>
-                            <option value="Resolved">Resolved</option>
-                            <option value="Rejected">Rejected</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">
-                            Note (Required)
-                        </label>
-                        <textarea
-                            value={note}
-                            onChange={(e) => setNote(e.target.value)}
-                            placeholder="Explain the update..."
-                            required
-                            rows={3}
-                            className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
-                        />
-                    </div>
-
-                    <div className="flex justify-end gap-3 pt-2">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="px-4 py-2 text-slate-600 hover:bg-slate-50 rounded-lg font-medium"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="submit"
-                            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium"
-                        >
-                            Update Status
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    );
-};
 
 export default AdminDashboard;
