@@ -1,0 +1,30 @@
+
+> shikayat@0.0.0 lint
+> eslint .
+
+
+C:\Users\sansk\Desktop\Coding\Projects\Shikayat\src\context\ComplaintContext.jsx
+  6:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\sansk\Desktop\Coding\Projects\Shikayat\src\pages\ComplaintSuccess.jsx
+  1:28  error  'useState' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\sansk\Desktop\Coding\Projects\Shikayat\src\pages\TrackComplaint.jsx
+  34:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  32 |     useEffect(() => {
+  33 |         if (urlId) {
+> 34 |             setSearchId(urlId);
+     |             ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  35 |             const found = getComplaint(urlId);
+  36 |             if (found) {
+  37 |                 setComplaint(found);  react-hooks/set-state-in-effect
+
+✖ 3 problems (3 errors, 0 warnings)
+
